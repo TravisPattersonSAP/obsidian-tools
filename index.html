@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Obsidian Daily Note Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f11;
+    --surface: #15171a;
+    --surface2: #1c1f23;
+    --border: #2a2d33;
+    --accent: #7c6af7;
+    --accent2: #b8a9ff;
+    --text: #e8e9eb;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --red: #f87171;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,247,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,247,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    width: 100%;
+  }
+
+  header {
+    margin-bottom: 48px;
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--accent), #4f46e5);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .logo-tag {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    opacity: 0.7;
+  }
+
+  h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(28px, 5vw, 42px);
+    font-weight: 400;
+    color: var(--text);
+    line-height: 1.1;
+    margin-bottom: 10px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent2);
+  }
+
+  .subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    max-width: 500px;
+  }
+
+  /* Date strip */
+  .date-strip {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 24px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .date-strip input[type="date"] {
+    background: transparent;
+    border: none;
+    color: var(--accent2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    outline: none;
+    color-scheme: dark;
+  }
+
+  .dot { color: var(--border); }
+
+  /* Two-column layout */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  label .licon {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+  }
+
+  .licon.meetings { background: rgba(251,191,36,0.15); }
+  .licon.tickets  { background: rgba(124,106,247,0.15); }
+  .licon.support  { background: rgba(74,222,128,0.15); }
+  .licon.collab   { background: rgba(248,113,113,0.15); }
+  .licon.brain    { background: rgba(184,169,255,0.15); }
+  .licon.notes    { background: rgba(156,163,175,0.15); }
+
+  textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    resize: vertical;
+    min-height: 90px;
+    transition: border-color 0.2s;
+    outline: none;
+    width: 100%;
+  }
+
+  textarea::placeholder { color: var(--text-muted); }
+
+  textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(124,106,247,0.1);
+  }
+
+  textarea.tall { min-height: 120px; }
+
+  /* Generate button */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    align-items: center;
+  }
+
+  .btn-generate {
+    background: linear-gradient(135deg, var(--accent), #4f46e5);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-generate:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-clear {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .btn-clear:hover { border-color: var(--text-muted); color: var(--text); }
+
+  /* Output */
+  .output-section {
+    margin-top: 40px;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+
+  .output-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .output-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .btn-copy {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-copy:hover { border-color: var(--accent2); color: var(--accent2); }
+  .btn-copy.copied { border-color: var(--green); color: var(--green); }
+
+  .output-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 22px;
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 120px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Loader */
+  .loader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 32px;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Inline markdown rendering */
+  .output-box h2 { font-family: 'Instrument Serif', serif; font-size: 16px; color: var(--accent2); margin: 16px 0 6px; font-weight: 400; }
+  .output-box h3 { font-size: 12px; color: var(--yellow); letter-spacing: 1.5px; text-transform: uppercase; margin: 12px 0 4px; }
+  .output-box strong { color: var(--text); font-weight: 500; }
+  .output-box em { color: var(--text-muted); font-style: italic; }
+  .output-box hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+  /* Obsidian tip */
+  .tip {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: rgba(124,106,247,0.06);
+    border: 1px solid rgba(124,106,247,0.2);
+    border-radius: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .tip strong { color: var(--accent2); }
+
+  /* Error */
+  .error-box {
+    padding: 16px;
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.25);
+    border-radius: 8px;
+    color: var(--red);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo-row">
+      <div class="logo-icon">⬡</div>
+      <span class="logo-tag">Daily Note Generator</span>
+    </div>
+    <h1>Turn your messy day<br>into a <em>clean Obsidian note</em></h1>
+    <p class="subtitle">Paste rough bullet points, half-sentences, or stream-of-consciousness from your workday — Claude structures it into a polished daily note.</p>
+  </header>
+
+  <!-- Date -->
+  <div class="date-strip">
+    <span>📅 Note date:</span>
+    <input type="date" id="noteDate" />
+    <span class="dot">·</span>
+    <span id="dayName" style="color: var(--text-dim)"></span>
+  </div>
+
+  <!-- Input fields -->
+  <div class="grid">
+    <div class="field">
+      <label><span class="licon meetings">🤝</span>Meetings & Calls</label>
+      <textarea id="meetings" placeholder="e.g. standup 9am, quick sync w/ sarah about onboarding, 1:1 with manager..." class="tall"></textarea>
+    </div>
+    <div class="field">
+      <label><span class="licon tickets">🎫</span>Tickets & Tasks</label>
+      <textarea id="tickets" placeholder="e.g. worked on ticket 4421 billing issue, closed 3 tickets, started looking at bug in checkout..." class="tall"></textarea>
+    </div>
+    <div class="field">
+      <label><span class="licon support">🎧</span>Customer Support</label>
+      <textarea id="support" placeholder="e.g. handled 12 tickets, lots of shipping questions, escalated 2 to tier 2..."></textarea>
+    </div>
+    <div class="field">
+      <label><span class="licon collab">💬</span>Colleague Interactions</label>
+      <textarea id="collab" placeholder="e.g. helped james debug his integration, reviewed PR for lisa, slack thread about new policy..."></textarea>
+    </div>
+    <div class="field full">
+      <label><span class="licon brain">🔁</span>Brain Dump / Anything Else</label>
+      <textarea id="brain" placeholder="Anything that doesn't fit above — blockers, random thoughts, wins, frustrations, things to follow up on..."></textarea>
+    </div>
+    <div class="field full">
+      <label><span class="licon notes">🎯</span>Mood / Energy (optional)</label>
+      <textarea id="mood" placeholder="e.g. felt scattered in the morning, got into a good flow after lunch, tired by 4pm..." style="min-height:60px"></textarea>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-generate" id="generateBtn" onclick="generate()">
+      <span>⬡</span> Generate Note
+    </button>
+    <button class="btn-clear" onclick="clearAll()">Clear</button>
+  </div>
+
+  <!-- Output -->
+  <div class="output-section" id="outputSection">
+    <div class="output-header">
+      <div class="output-label">
+        <div class="status-dot"></div>
+        Generated Note — Ready to paste into Obsidian
+      </div>
+      <button class="btn-copy" id="copyBtn" onclick="copyNote()">📋 Copy Markdown</button>
+    </div>
+    <div class="output-box" id="outputBox"></div>
+    <div class="tip">
+      <strong>Paste into Obsidian:</strong> Open your daily note, press <strong>Ctrl+V</strong> (or Cmd+V), done. Works best with the <strong>Daily Notes</strong> core plugin or <strong>Periodic Notes</strong> plugin. Use <strong>Templater</strong> to auto-insert on note creation.
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Set today's date
+  const dateInput = document.getElementById('noteDate');
+  const today = new Date();
+  dateInput.value = today.toISOString().split('T')[0];
+  updateDayName();
+  dateInput.addEventListener('change', updateDayName);
+
+  function updateDayName() {
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const d = new Date(dateInput.value + 'T12:00:00');
+    document.getElementById('dayName').textContent = days[d.getDay()];
+  }
+
+  function getFormattedDate() {
+    const d = new Date(dateInput.value + 'T12:00:00');
+    return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  async function generate() {
+    const meetings = document.getElementById('meetings').value.trim();
+    const tickets  = document.getElementById('tickets').value.trim();
+    const support  = document.getElementById('support').value.trim();
+    const collab   = document.getElementById('collab').value.trim();
+    const brain    = document.getElementById('brain').value.trim();
+    const mood     = document.getElementById('mood').value.trim();
+
+    const hasContent = meetings || tickets || support || collab || brain;
+    if (!hasContent) {
+      alert('Add some notes first — even rough ones!');
+      return;
+    }
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Generating...';
+
+    const outputSection = document.getElementById('outputSection');
+    const outputBox = document.getElementById('outputBox');
+    outputSection.classList.remove('visible');
+    outputBox.innerHTML = '<div class="loader"><div class="spinner"></div> Claude is structuring your day...</div>';
+    outputSection.classList.add('visible');
+
+    const dateStr = getFormattedDate();
+
+    const isoDate = dateInput.value; // YYYY-MM-DD
+    const energyValue = mood ? mood.trim().split(/[\s,\.]+/)[0].toLowerCase() : 'not-recorded';
+
+    const prompt = `You are an expert at turning rough, messy work notes into clean, structured Obsidian daily notes in Markdown format.
+
+The user works in a customer support / operations role at SAP Business Network (SBN). Their work involves: meetings & calls, ticket work, customer support, and collaborating with colleagues.
+
+Today's date: ${dateStr}
+ISO date: ${isoDate}
+
+Here are their rough notes for the day:
+
+MEETINGS & CALLS:
+${meetings || '(none provided)'}
+
+TICKETS & TASKS:
+${tickets || '(none provided)'}
+
+CUSTOMER SUPPORT:
+${support || '(none provided)'}
+
+COLLEAGUE INTERACTIONS:
+${collab || '(none provided)'}
+
+BRAIN DUMP / OTHER:
+${brain || '(none provided)'}
+
+MOOD / ENERGY:
+${mood || '(none provided)'}
+
+Generate a clean, structured Obsidian daily note in Markdown. Follow this EXACT structure — do not deviate:
+
+---
+tags: [type/daily]
+created: ${isoDate}
+energy: ${energyValue}
+---
+
+# 📅 ${dateStr}
+
+## 🤝 Meetings & Calls
+(bullet list of meetings, clean and concise. If none, write "- No meetings today.")
+
+## 🎫 Tickets & Task Work
+(bullet list of tickets/tasks worked on. If none, write "- No ticket work today.")
+
+## 🎧 Customer Support
+(summary of support activities with bullet points. If none, write "- No support work today.")
+
+## 💬 Colleague Interactions
+(bullet list of notable interactions. If none, write "- No notable interactions.")
+
+## 🧠 Other Notes
+(any remaining items from the brain dump, formatted cleanly. If none, omit this section entirely.)
+
+## 🔁 End-of-Day Reflection
+- **What went well:** (1-2 sentences synthesized from their notes)
+- **What was slow/blocked:** (1 sentence — infer from notes or write "Nothing notable.")
+- **Energy:** (one word or short phrase based on mood input, or "Not recorded." if none)
+- **Follow-ups for tomorrow:** (any action items or loose ends you spot in the notes, as sub-bullets using two spaces and a dash. If none obvious, write "  - Review notes from today.")
+
+---
+*Generated with AI · ${new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})}*
+
+Rules:
+- The YAML frontmatter block (between the two --- lines) MUST be the very first thing in the output
+- Keep bullet points clean and concise — remove filler words, fix grammar
+- Don't invent facts — only use what's provided
+- Use proper Obsidian Markdown (headers with #, bullets with -)
+- Keep the tone professional but natural
+- Output ONLY the Markdown note, nothing else — no explanation, no preamble`;
+
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer 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'
+    },
+    body: JSON.stringify({
+      model: 'nvidia/nemotron-3-super-120b-a12b:free',
+      max_tokens: 2000,
+      temperature: 0.3,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(JSON.stringify(data.error) || 'API error');
+      }
+
+      const markdown = data.choices?.[0]?.message?.content || '';
+      outputBox.innerHTML = renderMarkdown(markdown);
+      outputBox.dataset.raw = markdown;
+      document.getElementById('copyBtn').classList.remove('copied');
+      document.getElementById('copyBtn').textContent = '📋 Copy Markdown';
+
+    } catch (err) {
+      outputBox.innerHTML = `<div class="error-box">⚠️ Error: ${err.message}</div>`;
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<span>⬡</span> Generate Note';
+  }
+
+  function renderMarkdown(md) {
+    // Render YAML frontmatter block as a styled box
+    md = md.replace(/^---\n([\s\S]*?)\n---\n/, (_, yaml) => {
+      const lines = yaml.split('\n').map(l => `&nbsp;&nbsp;${l}`).join('<br>');
+      return `<div style="background:rgba(124,106,247,0.08);border:1px solid rgba(124,106,247,0.25);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:#9ca3af;line-height:1.7">${lines}</div>`;
+    });
+    // Basic markdown to HTML for display
+    return md
+      .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/^- (.+)$/gm, '&nbsp;&nbsp;· $1')
+      .replace(/^---$/gm, '<hr>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function copyNote() {
+    const raw = document.getElementById('outputBox').dataset.raw;
+    if (!raw) return;
+    navigator.clipboard.writeText(raw).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '📋 Copy Markdown';
+        btn.classList.remove('copied');
+      }, 2500);
+    });
+  }
+
+  function clearAll() {
+    ['meetings','tickets','support','collab','brain','mood'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    const outputSection = document.getElementById('outputSection');
+    outputSection.classList.remove('visible');
+  }
+</script>
+</body>
+</html>
