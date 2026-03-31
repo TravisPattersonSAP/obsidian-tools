@@ -569,8 +569,7 @@ Rules:
 - Keep the tone professional but natural
 - Output ONLY the Markdown note, nothing else — no explanation, no preamble`;
 
-    // POWER AUTOMATE WEBHOOK URL — paste your flow's HTTP trigger URL here
-    const FLOW_URL = 'https://default42f7676cf455423c82f6dc2d99791a.f7.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2c59c0dc548b4208a9f0999e1f5a82ef/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=yZ4_dXC4Q7MmSj-CmLjVdv032GVrHfXDxnstOjBcpnM';
+    const FLOW_URL = 'https://obsidian-proxy.travispatterson.workers.dev';
 
     try {
       const response = await fetch(FLOW_URL, {
