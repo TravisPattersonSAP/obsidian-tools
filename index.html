@@ -569,28 +569,25 @@ Rules:
 - Keep the tone professional but natural
 - Output ONLY the Markdown note, nothing else — no explanation, no preamble`;
 
-    try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer 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'
-    },
-    body: JSON.stringify({
-      model: 'nvidia/nemotron-3-super-120b-a12b:free',
-      max_tokens: 2000,
-      temperature: 0.3,
-      messages: [{ role: 'user', content: prompt }]
-    })
-  });
+    // POWER AUTOMATE WEBHOOK URL — paste your flow's HTTP trigger URL here
+    const FLOW_URL = 'https://default42f7676cf455423c82f6dc2d99791a.f7.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2c59c0dc548b4208a9f0999e1f5a82ef/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=yZ4_dXC4Q7MmSj-CmLjVdv032GVrHfXDxnstOjBcpnM';
 
-      const data = await response.json();
+    try {
+      const response = await fetch(FLOW_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
 
       if (!response.ok) {
-        throw new Error(JSON.stringify(data.error) || 'API error');
+        const errText = await response.text();
+        throw new Error(`Flow error ${response.status}: ${errText}`);
       }
 
-      const markdown = data.choices?.[0]?.message?.content || '';
+      const data = await response.json();
+      const markdown = data.markdown || data.output || data.text || '';
+      if (!markdown) throw new Error('Flow returned empty response — check Power Automate run history.');
+
       outputBox.innerHTML = renderMarkdown(markdown);
       outputBox.dataset.raw = markdown;
       document.getElementById('copyBtn').classList.remove('copied');
