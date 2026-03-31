@@ -407,12 +407,12 @@
       <textarea id="meetings" placeholder="e.g. standup 9am, quick sync w/ sarah about onboarding, 1:1 with manager..." class="tall"></textarea>
     </div>
     <div class="field">
-      <label><span class="licon tickets">🎫</span>Tickets & Tasks</label>
-      <textarea id="tickets" placeholder="e.g. worked on ticket 4421 billing issue, closed 3 tickets, started looking at bug in checkout..." class="tall"></textarea>
+      <label><span class="licon tickets">📋</span>Tasks & Projects</label>
+      <textarea id="tickets" placeholder="e.g. worked on ticket 4421 billing issue, closed 3 tasks, started investigating bug in checkout, reviewed PR..." class="tall"></textarea>
     </div>
     <div class="field">
-      <label><span class="licon support">🎧</span>Customer Support</label>
-      <textarea id="support" placeholder="e.g. handled 12 tickets, lots of shipping questions, escalated 2 to tier 2..."></textarea>
+      <label><span class="licon support">🎧</span>Support Queue</label>
+      <textarea id="support" placeholder="e.g. handled 12 cases, lots of shipping questions, escalated 2 to tier 2, responded to partner portal issues..."></textarea>
     </div>
     <div class="field">
       <label><span class="licon collab">💬</span>Colleague Interactions</label>
@@ -502,7 +502,7 @@
 
     const prompt = `You are an expert at turning rough, messy work notes into clean, structured Obsidian daily notes in Markdown format.
 
-The user works in a customer support / operations role at SAP Business Network (SBN). Their work involves: meetings & calls, ticket work, customer support, and collaborating with colleagues.
+The user works in a customer support / operations role at SAP Business Network (SBN). Their work involves: meetings & calls, tasks & projects, support queue, and collaborating with colleagues.
 
 Today's date: ${dateStr}
 ISO date: ${isoDate}
@@ -512,10 +512,10 @@ Here are their rough notes for the day:
 MEETINGS & CALLS:
 ${meetings || '(none provided)'}
 
-TICKETS & TASKS:
+TASKS & PROJECTS:
 ${tickets || '(none provided)'}
 
-CUSTOMER SUPPORT:
+SUPPORT QUEUE:
 ${support || '(none provided)'}
 
 COLLEAGUE INTERACTIONS:
@@ -540,11 +540,11 @@ energy: ${energyValue}
 ## 🤝 Meetings & Calls
 (bullet list of meetings, clean and concise. If none, write "- No meetings today.")
 
-## 🎫 Tickets & Task Work
-(bullet list of tickets/tasks worked on. If none, write "- No ticket work today.")
+## 📋 Tasks & Projects
+(bullet list of tasks/projects worked on. If none, write "- No task work today.")
 
-## 🎧 Customer Support
-(summary of support activities with bullet points. If none, write "- No support work today.")
+## 🎧 Support Queue
+(summary of support queue activity with bullet points. If none, write "- No support queue activity today.")
 
 ## 💬 Colleague Interactions
 (bullet list of notable interactions. If none, write "- No notable interactions.")
